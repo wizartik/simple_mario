@@ -53,6 +53,23 @@ public class LevelController {
         visibleNodes = new HashSet<>();
         invisibleNodes = new HashSet<>();
 
+        init();
+
+    }
+
+    public boolean isLoss() {
+        return heroController.isLoss();
+    }
+
+    public boolean isVictory() {
+        return heroController.isVictory();
+    }
+
+    public Set<Node> getVisibleNodes() {
+        return visibleNodes;
+    }
+
+    private void init() {
         level.setLevelController(this);
         cyclicBarrier = new CyclicBarrier(4);
 
@@ -61,19 +78,6 @@ public class LevelController {
         fitNodes();
 
         heroNode = heroController.getNode();
-
-    }
-
-    public boolean isLoss(){
-        return heroController.isLoss();
-    }
-
-    public boolean isVictory(){
-        return heroController.isVictory();
-    }
-
-    public Set<Node> getVisibleNodes() {
-        return visibleNodes;
     }
 
     private void initControllers() {
@@ -82,12 +86,11 @@ public class LevelController {
         List<Hittable> list = new CopyOnWriteArrayList<>(level.getHittables());
         List<Element> elements = new CopyOnWriteArrayList<>(level.getTextures());
 
-        hitController = new HitController(elements, list, mario, level
-                .getActionElements(), cyclicBarrier);
-        this.heroController = new HeroController(mario, hitController, level
-                .getLength(), cyclicBarrier);
+        hitController = new HitController(elements, list, mario, level.getActionElements(), cyclicBarrier);
+        heroController = new HeroController(mario, hitController, level.getLength(), cyclicBarrier);
+        enemiesController = new EnemiesController(level.getEnemies(), cyclicBarrier);
+
         heroScreenX = heroController.getX();
-        enemiesController = new EnemiesController(level.getEnemies(),cyclicBarrier);
     }
 
     private void initElements() {
@@ -99,8 +102,7 @@ public class LevelController {
 
     private void fitNodes() {
 
-        for (int i = 0; i < elements.size(); i++) {
-            Element element = elements.get(i);
+        for (Element element : elements) {
             if (isFittingX(element) && isFittingY(element)) {
                 visibleNodes.add(adjustElementPosition(element));
             } else {
@@ -116,8 +118,8 @@ public class LevelController {
     }
 
     private boolean isFittingY(Element element) {
-        return ((element.getY() <= currentEndY + LOAD_GAP)
-                && (element.getY() + element.getHeight() + LOAD_GAP >= currentY));
+        return (element.getY() <= currentEndY + LOAD_GAP)
+                && (element.getY() + element.getHeight() + LOAD_GAP >= currentY);
     }
 
     private Node adjustElementPosition(Element element) {
@@ -141,6 +143,10 @@ public class LevelController {
         fitNodes();
 
         heroNode.relocate(heroScreenX, heroScreenY);
+        makeDelay();
+    }
+
+    private void makeDelay() {
         try {
             cyclicBarrier.await();
         } catch (InterruptedException e) {
@@ -158,7 +164,7 @@ public class LevelController {
             this.currentX = heroX - width * (1 - MOVE_SCREEN_X_COEF);
             this.currentEndX = currentX + width;
         }
-            this.heroScreenX = heroX - currentX;
+        this.heroScreenX = heroX - currentX;
     }
 
 
@@ -202,30 +208,37 @@ public class LevelController {
         }
     }
 
-    public Set<Node> toRemove() {
+    public Set<Node> getInvisibleElements() {
 
         for (int i = 0; i < elements.size(); i++) {
             Element element = elements.get(i);
 
             if (!element.isVisible()) {
-                visibleNodes.remove(element.getNode());
-                invisibleNodes.add(element.getNode());
-                elements.remove(element);
-                hitController.remove(element);
+                makeElementInvisible(element);
                 i--;
             }
 
             if (!element.isActive()) {
                 hitController.remove(element);
             }
-
-            if (!visibleNodes.contains(element.getNode())) {
-                invisibleNodes.add(element.getNode());
-            } else {
-                invisibleNodes.remove(element.getNode());
-            }
+            proceedNode(element);
         }
         return invisibleNodes;
+    }
+
+    private void makeElementInvisible(Element element){
+        visibleNodes.remove(element.getNode());
+        elements.remove(element);
+        hitController.remove(element);
+        invisibleNodes.add(element.getNode());
+    }
+
+    private void proceedNode(Element element){
+        if (!visibleNodes.contains(element.getNode())) {
+            invisibleNodes.add(element.getNode());
+        } else {
+            invisibleNodes.remove(element.getNode());
+        }
     }
 
     public void spawnEnemy(Element element) {

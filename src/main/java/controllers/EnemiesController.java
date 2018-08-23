@@ -30,17 +30,20 @@ public class EnemiesController implements Runnable {
 
 
     private void refresh() {
-        for (int i = 0; i < movables.size(); i++) {
-            Movable m = movables.get(i);
+        movables.forEach(m -> {
             if (m.isActive()) {
-                m.moveDown();
-                m.moveLeft();
-                m.moveRight();
-                m.moveUp();
+                move(m);
             } else {
                 movables.remove(m);
             }
-        }
+        });
+    }
+
+    private void move(Movable m){
+        m.moveDown();
+        m.moveLeft();
+        m.moveRight();
+        m.moveUp();
     }
 
     @Override
@@ -48,15 +51,16 @@ public class EnemiesController implements Runnable {
         while (!stop) {
             refresh();
             try {
-                if (cyclicBarrier != null) {
-                    cyclicBarrier.await();
-                } else {
-                    return;
-                }
+                makeDelay();
             } catch (InterruptedException | BrokenBarrierException e) {
                 cyclicBarrier = null;
-                System.out.println("enemies interrupted");
             }
+        }
+    }
+
+    private void makeDelay() throws BrokenBarrierException, InterruptedException {
+        if (cyclicBarrier != null) {
+            cyclicBarrier.await();
         }
     }
 

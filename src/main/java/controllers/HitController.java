@@ -29,7 +29,11 @@ public class HitController implements Runnable {
         this.hittables = hittables;
         this.hero = hero;
         this.actionElements = actionElements;
-        elements.addAll(actionElements);
+        init();
+    }
+
+    private void init(){
+        this.elements.addAll(this.actionElements);
         this.thread = new Thread(this, "hit controller");
         this.thread.start();
     }
@@ -42,9 +46,11 @@ public class HitController implements Runnable {
                 checkSides(hittable);
             }
         }
+        doActionOnHit();
+    }
 
-        for (int i = 0; i < actionElements.size(); i++) {
-            ActionElement a = actionElements.get(i);
+    private void doActionOnHit(){
+        for (ActionElement a : actionElements) {
             if (hero.checkUp(a)) {
                 a.downHit();
                 hero.doAction(a.getAction());
@@ -143,20 +149,21 @@ public class HitController implements Runnable {
         while (hero.isActive()) {
             checkHittings();
             try {
-                if (cyclicBarrier != null) {
-                    cyclicBarrier.await();
-                } else {
-                    return;
-                }
+                makeDelay();
             } catch (InterruptedException | BrokenBarrierException e) {
                 cyclicBarrier = null;
-                System.out.println("hitcontroller interrupted");
             }
         }
         try {
             cyclicBarrier.await();
         } catch (InterruptedException | BrokenBarrierException e) {
-            System.out.println("hitcontroller interrupted");
+            cyclicBarrier = null;
+        }
+    }
+
+    private void makeDelay() throws BrokenBarrierException, InterruptedException {
+        if (cyclicBarrier != null) {
+            cyclicBarrier.await();
         }
     }
 

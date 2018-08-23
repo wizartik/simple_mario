@@ -37,9 +37,7 @@ public class HeroController implements Runnable {
         this.hero = hero;
         this.hitController = hitController;
         this.victoryLength = length;
-        jumpArray = createJumpTrajectory();
-        this.thread = new Thread(this, "hero controller");
-        this.thread.start();
+        init();
     }
 
     public double getWidth() {
@@ -70,26 +68,35 @@ public class HeroController implements Runnable {
         return loss;
     }
 
+    private void init(){
+        jumpArray = createJumpTrajectory();
+        this.thread = new Thread(this, "hero controller");
+        this.thread.start();
+    }
+
     @Override
     public void run() {
         while (!isVictory() && !isLoss()) {
-
-            gravity();
-            checkState();
-            processMove();
-            processJump();
-
+            processMovement();
             try {
-                if (cyclicBarrier != null) {
-                    cyclicBarrier.await();
-                } else {
-                    return;
-                }
+                makeDelay();
             } catch (InterruptedException | BrokenBarrierException e) {
                 cyclicBarrier = null;
-                System.out.println("herocontroller interrupted");
             }
         }
+    }
+
+    private void makeDelay() throws BrokenBarrierException, InterruptedException {
+        if (cyclicBarrier != null) {
+            cyclicBarrier.await();
+        }
+    }
+
+    private void processMovement(){
+        gravity();
+        checkState();
+        processMove();
+        processJump();
     }
 
     public void moveRight() {
@@ -162,18 +169,18 @@ public class HeroController implements Runnable {
 
         int points = (int) (Settings.JUMP_TIME / ((double) Settings.DELAY / 1000));
         double step = Math.PI / points;
-        double[] array = new double[points];
+        double[] trajectory = new double[points];
 
         double previous = 0;
         double argument = 0;
-        for (int i = 0; i < array.length; i++) {
+        for (int i = 0; i < trajectory.length; i++) {
             argument += step;
             double current = Math.sin(argument);
-            array[i] = (current - previous) * Settings.JUMP_HEIGHT;
+            trajectory[i] = (current - previous) * Settings.JUMP_HEIGHT;
             previous = current;
         }
 
-        return array;
+        return trajectory;
     }
 
     private double g;

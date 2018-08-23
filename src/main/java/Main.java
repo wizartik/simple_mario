@@ -111,7 +111,7 @@ public class Main extends Application {
             @Override
             public void handle(long now) {
                 levelController.refresh();
-                root.getChildren().removeAll(levelController.toRemove());
+                root.getChildren().removeAll(levelController.getInvisibleElements());
                 levelController.addNew(root.getChildren());
 
                 if (levelController.isLoss()){
