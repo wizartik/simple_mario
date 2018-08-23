@@ -18,6 +18,7 @@ import levels.Level2;
 import parameters.Sound;
 import sound.SoundManager;
 
+//DONT LOOK HERE PLS
 public class Main extends Application {
 
     private final static int width = 1000;
